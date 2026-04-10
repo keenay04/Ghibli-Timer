@@ -1,8 +1,8 @@
 {
   "name": "Pomodoro Timer",
-  "short_name": "Nay's App",
+  "short_name": "Pomodoro Timer",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "icons": [{ "src": "totoro.png", "sizes": "512x512", "type": "image/png" }]
+  "icons": [{ "src": "totoro.png", "sizes": "300x500", "type": "image/png" }]
 }
