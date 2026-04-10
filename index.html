@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ghibli Pomodoro Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pomodoro.css">
+<link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+<div class="g2">
+  <div class="hero">
+    <div class="overlay-content">
+      <div class="glass-timer">
+        <div class="top-row">
+          <div class="char-col">
+            <img src="totoro.png" alt="" width="60" height="90" viewBox="0 0 60 90" id="mo">
+          </div>
+
+          <div class="info-col">
+            <div class="mode-pills">
+              <button class="mpill on" id="pw" onclick="sw('work')">🌿 Focus</button>
+              <button class="mpill b" id="ps" onclick="sw('short')">☁️ Break</button>
+              <button class="mpill l" id="pl" onclick="sw('long')">🌙 Rest</button>
+            </div>
+            <div class="big-time" id="g-time"> 25 : 00 </div>
+            <div class="phase-sub" id="g-phase">FOREST FOCUS TIME</div>
+          </div>
+        </div>
+
+        <div class="ring-row">
+          <svg width="22" height="22" viewBox="0 0 22 22" style="flex-shrink:0">
+            <circle cx="11" cy="11" r="9" fill="none" stroke="#e8d8b0" stroke-width="3"/>
+            <circle cx="11" cy="11" r="9" fill="none" stroke="#5a8040" stroke-width="3"
+              stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="0"
+              transform="rotate(-90 11 11)" id="mini-ring"/>
+          </svg>
+          <div class="ring-bar-wrap">
+            <div class="ring-bar-fill" id="bar" style="width:100%"></div>
+          </div>
+          <div class="pct-label" id="pct">100%</div>
+        </div>
+
+        <div class="btn-main-row">
+          <button class="gbtn play" id="gbtn" onclick="toggle()">▶ Start</button>
+          <button class="gbtn skip" onclick="skip()">Skip ›</button>
+        </div>
+      </div>
+
+      <div class="sessions-card">
+        <div class="sesh-label">SESSIONS</div>
+        <div class="sesh-dots" id="g-dots"></div>
+        <div class="sesh-count" id="g-count">0 / 4</div>
+      </div>
+
+      <div class="settings-card">
+        <div class="srow2">
+          <label>🌿 Focus</label>
+          <input type="range" min="5" max="60" step="5" value="25" id="g-sw" oninput="onSet()">
+          <span id="g-sw-v">25 min</span>
+        </div>
+        <div class="srow2">
+          <label>☁️ Break</label>
+          <input type="range" min="1" max="15" step="1" value="5" id="g-ss" oninput="onSet()">
+          <span id="g-ss-v">5 min</span>
+        </div>
+        <div class="srow2">
+          <label>🌙 Long Rest</label>
+          <input type="range" min="5" max="30" step="5" value="15" id="g-sl" oninput="onSet()">
+          <span id="g-sl-v">15 min</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const C56=2*Math.PI*9;
+let cfg={work:25,short:5,long:15};
+let mode='work',going=false,iv=null,total=25*60,rem=25*60,done=0;
+const DOTS=4;
+const themes={
+  work:{bar:'#5a8040',ring:'#5a8040',phase:'FOREST FOCUS TIME',btn:'play'},
+  short:{bar:'#5a9ab8',ring:'#5a9ab8',phase:'BREATHE BY THE RIVER',btn:'play b'},
+  long:{bar:'#b06898',ring:'#b06898',phase:'REST UNDER THE STARS',btn:'play l'},
+};
+
+function pad(n){return String(n).padStart(2,'0');}
+
+function render(){
+  const m=Math.floor(rem/60),s=rem%60;
+  document.getElementById('g-time').textContent=pad(m)+':'+pad(s);
+  const frac=rem/total;
+  const pct=Math.round(frac*100);
+  document.getElementById('bar').style.width=pct+'%';
+  document.getElementById('pct').textContent=pct+'%';
+  document.getElementById('mini-ring').setAttribute('stroke-dashoffset',(C56*(1-frac)).toFixed(2));
+  const t=themes[mode];
+  document.getElementById('bar').style.background=t.bar;
+  document.getElementById('mini-ring').setAttribute('stroke',t.ring);
+}
+
+function applyTheme(){
+  const t=themes[mode];
+  document.getElementById('g-phase').textContent=t.phase;
+  const btn=document.getElementById('gbtn');
+  btn.className='gbtn '+t.btn;
+  btn.textContent=going?'⏸ pause':'▶ Start';
+  ['work','short','long'].forEach(k=>{
+    const ids={work:'pw',short:'ps',long:'pl'};
+    const el=document.getElementById(ids[k]);
+    const base=k==='short'?'mpill b':k==='long'?'mpill l':'mpill';
+    el.className=base+(k===mode?' on':'');
+  });
+  document.getElementById('mo').setAttribute('d', going?'M36 57 Q40 63 44 57':'M36 57 Q40 61 44 57');
+}
+
+function updateDots(){
+  const wrap=document.getElementById('g-dots');
+  wrap.innerHTML='';
+  const prog=done%DOTS;
+  for(let i=0;i<DOTS;i++){
+    const d=document.createElement('div');
+    d.className='sdot'+(i<prog?' done':'')+(i===prog?' cur':'');
+    wrap.appendChild(d);
+  }
+  document.getElementById('g-count').textContent=done+' / '+DOTS;
+}
+
+function sw(m_){
+  clearInterval(iv);going=false;mode=m_;
+  total=cfg[m_]*60;rem=total;
+  document.getElementById('gbtn').textContent='▶ Start';
+  applyTheme();render();updateDots();
+}
+
+function toggle(){
+  if(going){
+    clearInterval(iv);going=false;
+    document.getElementById('gbtn').textContent='▶ Resume';
+    document.getElementById('mo').setAttribute('d','M36 57 Q40 61 44 57');
+  } else {
+    going=true;
+    document.getElementById('gbtn').textContent='⏸ Pause';
+    document.getElementById('mo').setAttribute('d','M36 57 Q40 63 44 57');
+    iv=setInterval(()=>{
+      rem--;render();
+      if(rem<=0){
+        clearInterval(iv);going=false;
+        if(mode==='work') done++;
+        updateDots();
+        const next=mode==='work'?(done%DOTS===0?'long':'short'):'work';
+        setTimeout(()=>sw(next),500);
+      }
+    },1000);
+  }
+}
+
+function skip(){
+  clearInterval(iv);going=false;
+  if(mode==='work') done++;
+  updateDots();
+  const next=mode==='work'?(done%DOTS===0?'long':'short'):'work';
+  sw(next);
+}
+
+function onSet(){
+  cfg.work=parseInt(document.getElementById('g-sw').value);
+  cfg.short=parseInt(document.getElementById('g-ss').value);
+  cfg.long=parseInt(document.getElementById('g-sl').value);
+  document.getElementById('g-sw-v').textContent=cfg.work+' min';
+  document.getElementById('g-ss-v').textContent=cfg.short+' min';
+  document.getElementById('g-sl-v').textContent=cfg.long+' min';
+  sw(mode);
+}
+
+applyTheme();render();updateDots();
+</script>
+</body>
+</html>
