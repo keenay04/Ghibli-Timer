@@ -259,7 +259,6 @@ function sw(m_){
 }
 
 function toggle(){
-  unlockAudio();
   if(going){
     clearInterval(iv);going=false;
     document.getElementById('gbtn').textContent='▶ Resume';
@@ -273,6 +272,8 @@ function toggle(){
       if(rem<=0){
         clearInterval(iv);going=false;
         if(mode==='work') done++;
+        unlockAudio();
+        playBell();
         updateDots();
         const next=mode==='work'?(done%DOTS===0?'long':'short'):'work';
         setTimeout(()=>sw(next),500);
