@@ -7,18 +7,61 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="pomodoro.css">
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="totoro.png">
 </head>
 
 <body>
 <div class="g2">
   <div class="hero">
     <div class="overlay-content">
+
+      <!--The Date Bar & Task-->
+      <div class="date-bar">
+          <div>
+            <div class="date-text" id="date-display">April 11, 2026</div>
+            <div class="day-text" id="day-display">SATURDAY</div>
+          </div>
+          <button class="fab" id="fab" onclick="togglePanel()" title="Tasks">+</button>
+      </div>
+
+      <!-- Task overlay -->
+      <div class="task-overlay" id="task-overlay" onclick="closePanel()"></div>
+    
+      <!-- Task panel -->
+      <div class="task-panel" id="task-panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">📜 TASKS</div>
+            <div class="panel-stats" id="todo-stats">0 Done</div>
+          </div>
+          <button class="panel-close" onclick="closePanel()">×</button>
+        </div>
+    
+        <div class="panel-focus-banner" id="focus-banner">
+          <div class="pfb-icon">🌿</div>
+          <div class="pfb-text" id="focus-banner-text"></div>
+        </div>
+    
+        <div class="panel-input-row">
+          <input class="panel-input" id="todo-input" type="text"
+            placeholder="Add a task…" maxlength="80"
+            onkeydown="if(event.key==='Enter')addTask()">
+          <button class="panel-add" onclick="addTask()">+</button>
+        </div>
+    
+        <div class="panel-list" id="todo-list">
+          <div class="empty-task" id="todo-empty">✦ No Tasks Yet ✦<br>Add one above to get started.</div>
+        </div>
+      </div>
+
+      <!--The Timer-->
       <div class="glass-timer">
         <div class="top-row">
           <div class="char-col">
-            <img src="totoro.png" alt="" width="60" height="90" viewBox="0 0 60 90" id="mo">
+            <img src="totoro.png" alt="" width="60" height="90" id="mo">
           </div>
 
+          
           <div class="info-col">
             <div class="mode-pills">
               <button class="mpill on" id="pw" onclick="sw('work')">🌿 Focus</button>
@@ -27,47 +70,54 @@
             </div>
             <div class="big-time" id="g-time"> 25 : 00 </div>
             <div class="phase-sub" id="g-phase">FOREST FOCUS TIME</div>
+            <div class="active-task-pill" id="atp">
+              <div class="atp-dot"></div>
+              <div class="atp-text" id="atp-text"></div>
+            </div>
           </div>
         </div>
 
+        <!--Progress Bar-->
         <div class="ring-row">
-          <svg width="22" height="22" viewBox="0 0 22 22" style="flex-shrink:0">
+          <svg width="22" height="22" viewBox="0 0 22 22" class="mini-ring-svg">
             <circle cx="11" cy="11" r="9" fill="none" stroke="#e8d8b0" stroke-width="3"/>
             <circle cx="11" cy="11" r="9" fill="none" stroke="#5a8040" stroke-width="3"
               stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="0"
               transform="rotate(-90 11 11)" id="mini-ring"/>
           </svg>
           <div class="ring-bar-wrap">
-            <div class="ring-bar-fill" id="bar" style="width:100%"></div>
+            <div class="ring-bar-fill" id="bar"></div>
           </div>
           <div class="pct-label" id="pct">100%</div>
         </div>
-
+        
+        <!--Button-->
         <div class="btn-main-row">
           <button class="gbtn play" id="gbtn" onclick="toggle()">▶ Start</button>
           <button class="gbtn skip" onclick="skip()">Skip ›</button>
         </div>
       </div>
-
-      <div class="sessions-card">
+      <!--The Sessions-->
+      <div class="pcard sessions-card">
         <div class="sesh-label">SESSIONS</div>
         <div class="sesh-dots" id="g-dots"></div>
         <div class="sesh-count" id="g-count">0 / 4</div>
       </div>
 
-      <div class="settings-card">
+      <!--Settings Timer-->
+      <div class="pcard">
         <div class="srow2">
-          <label>🌿 Focus</label>
+          <label for="g-sw">🌿 Focus</label>
           <input type="range" min="5" max="60" step="5" value="25" id="g-sw" oninput="onSet()">
           <span id="g-sw-v">25 min</span>
         </div>
         <div class="srow2">
-          <label>☁️ Break</label>
+          <label for="g-ss">☁️ Break</label>
           <input type="range" min="1" max="15" step="1" value="5" id="g-ss" oninput="onSet()">
           <span id="g-ss-v">5 min</span>
         </div>
         <div class="srow2">
-          <label>🌙 Long Rest</label>
+          <label for="g-sl">🌙 Long Rest</label>
           <input type="range" min="5" max="30" step="5" value="15" id="g-sl" oninput="onSet()">
           <span id="g-sl-v">15 min</span>
         </div>
@@ -77,15 +127,63 @@
 </div>
 
 <script>
+
+/*---- Date ----*/
+(function(){
+  const now=new Date();
+  const days=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('date-display').textContent=months[now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
+  document.getElementById('day-display').textContent=days[now.getDay()];
+})();
+
+/*---- Task Panel ----*/
+let panelOpen=false;
+function togglePanel(){
+  panelOpen?closePanel():openPanel();
+}
+
+function openPanel(){
+  panelOpen=true;
+  document.getElementById('task-panel').classList.add('show');
+  document.getElementById('task-overlay').classList.add('show');
+  document.getElementById('fab').classList.add('open');
+  setTimeout(()=>document.getElementById('todo-input').focus(),300);
+}
+
+function closePanel(){
+  panelOpen=false;
+  document.getElementById('task-panel').classList.remove('show');
+  document.getElementById('task-overlay').classList.remove('show');
+  document.getElementById('fab').classList.remove('open');
+}
+
+/*---- Timer ----*/
 const C56=2*Math.PI*9;
 let cfg={work:25,short:5,long:15};
-let mode='work',going=false,iv=null,total=25*60,rem=25*60,done=0;
+let mode='work', going=false, iv=null, total=25*60, rem=25*60,done=0;
 const DOTS=4;
 const themes={
   work:{bar:'#5a8040',ring:'#5a8040',phase:'FOREST FOCUS TIME',btn:'play'},
   short:{bar:'#5a9ab8',ring:'#5a9ab8',phase:'BREATHE BY THE RIVER',btn:'play b'},
   long:{bar:'#b06898',ring:'#b06898',phase:'REST UNDER THE STARS',btn:'play l'},
 };
+
+/*---- Audio ----*/
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function playBell(){
+  [523.25,659.25,783.99,1046.50].forEach((freq,i)=>{
+    setTimeout(()=>{
+      const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+      osc.connect(gain);gain.connect(audioCtx.destination);
+      osc.type='sine';
+      osc.frequency.setValueAtTime(freq,audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.35,audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+1.8);
+      osc.start(audioCtx.currentTime);osc.stop(audioCtx.currentTime+1.8);
+    },i*280);
+  });
+}
 
 function pad(n){return String(n).padStart(2,'0');}
 
@@ -107,7 +205,7 @@ function applyTheme(){
   document.getElementById('g-phase').textContent=t.phase;
   const btn=document.getElementById('gbtn');
   btn.className='gbtn '+t.btn;
-  btn.textContent=going?'⏸ pause':'▶ Start';
+  btn.textContent=going?'⏸ Pause':'▶ Start';
   ['work','short','long'].forEach(k=>{
     const ids={work:'pw',short:'ps',long:'pl'};
     const el=document.getElementById(ids[k]);
@@ -149,6 +247,7 @@ function toggle(){
       rem--;render();
       if(rem<=0){
         clearInterval(iv);going=false;
+        playBell();
         if(mode==='work') done++;
         updateDots();
         const next=mode==='work'?(done%DOTS===0?'long':'short'):'work';
@@ -177,6 +276,106 @@ function onSet(){
 }
 
 applyTheme();render();updateDots();
+
+/*---- Task ----*/
+let tasks=[],focusId=null;
+function saveTasks(){try{localStorage.setItem('ghibli_tasks',JSON.stringify(tasks));}catch(e){}}
+function loadTasks(){try{const d=localStorage.getItem('ghibli_tasks');if(d)tasks=JSON.parse(d);}catch(e){}}
+ 
+function updateActivePill(){
+  const pill=document.getElementById('atp');
+  const atpText=document.getElementById('atp-text');
+  if(focusId){
+    const t=tasks.find(t=>t.id===focusId&&!t.done);
+    if(t){pill.classList.add('show');atpText.textContent=t.text;return;}
+  }
+  pill.classList.remove('show');
+}
+ 
+function updateFocusBanner(){
+  const banner=document.getElementById('focus-banner');
+  const bt=document.getElementById('focus-banner-text');
+  if(focusId){
+    const t=tasks.find(t=>t.id===focusId&&!t.done);
+    if(t){banner.classList.add('show');bt.textContent='Now Focusing: '+t.text;return;}
+  }
+  banner.classList.remove('show');
+}
+ 
+function addTask(){
+  const inp=document.getElementById('todo-input');
+  const text=inp.value.trim();
+  if(!text)return;
+  tasks.push({id:Date.now(),text,done:false});
+  inp.value='';
+  saveTasks();renderTasks();
+}
+ 
+function toggleDone(id){
+  const t=tasks.find(t=>t.id===id);
+  if(!t)return;
+  t.done=!t.done;
+  if(t.done&&focusId===id){focusId=null;}
+  saveTasks();updateFocusBanner();updateActivePill();renderTasks();
+}
+ 
+function deleteTask(id){
+  tasks=tasks.filter(t=>t.id!==id);
+  if(focusId===id){focusId=null;}
+  saveTasks();updateFocusBanner();updateActivePill();renderTasks();
+}
+ 
+function setFocus(id){
+  focusId=focusId===id?null:id;
+  updateFocusBanner();updateActivePill();renderTasks();
+}
+ 
+function renderTasks(){
+  const list=document.getElementById('todo-list');
+  const empty=document.getElementById('todo-empty');
+  const doneCount=tasks.filter(t=>t.done).length;
+  document.getElementById('todo-stats').textContent=doneCount+' / '+tasks.length+' done';
+  list.querySelectorAll('.todo-item').forEach(el=>el.remove());
+  if(tasks.length===0){empty.style.display='block';return;}
+  empty.style.display='none';
+ 
+  [...tasks.filter(t=>!t.done),...tasks.filter(t=>t.done)].forEach(t=>{
+    const div=document.createElement('div');
+    div.className='todo-item'+(focusId===t.id?' active-task':'')+(t.done?' done-task':'');
+ 
+    const chk=document.createElement('div');
+    chk.className='todo-check'+(t.done?' checked':'');
+    chk.textContent=t.done?'✓':'';
+    chk.onclick=()=>toggleDone(t.id);
+ 
+    const txt=document.createElement('div');
+    txt.className='todo-text'+(t.done?' struck':'');
+    txt.textContent=t.text;
+    txt.onclick=()=>toggleDone(t.id);
+ 
+    const focBtn=document.createElement('button');
+    focBtn.className='todo-focus-btn'+(focusId===t.id?' focusing':'');
+    focBtn.textContent=focusId===t.id?'✦ On':'Focus';
+    if(t.done)focBtn.style.display='none';
+    focBtn.onclick=()=>setFocus(t.id);
+ 
+    const del=document.createElement('button');
+    del.className='todo-del';
+    del.textContent='×';
+    del.onclick=()=>deleteTask(t.id);
+
+    div.onclick = (e) => {
+      if (e.target.tagName  !== 'BUTTON') {
+        toggleDone(t.id);
+      }
+    }
+ 
+    div.appendChild(chk);div.appendChild(txt);div.appendChild(focBtn);div.appendChild(del);
+    list.appendChild(div);
+  });
+}
+ 
+loadTasks();renderTasks();
 </script>
 </body>
 </html>
