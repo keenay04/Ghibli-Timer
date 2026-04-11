@@ -170,18 +170,42 @@ const themes={
 };
 
 /*---- Audio ----*/
-const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-function playBell(){
-  [523.25,659.25,783.99,1046.50].forEach((freq,i)=>{
-    setTimeout(()=>{
-      const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
-      osc.connect(gain);gain.connect(audioCtx.destination);
-      osc.type='sine';
-      osc.frequency.setValueAtTime(freq,audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.35,audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+1.8);
-      osc.start(audioCtx.currentTime);osc.stop(audioCtx.currentTime+1.8);
-    },i*280);
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+function unlockAudio() {
+  const ctx = getAudioCtx();
+  const buf = ctx.createBuffer(1, 1, 22050);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(ctx.destination);
+  src.start(0);
+}
+
+function playBell() {
+  const ctx = getAudioCtx();
+  [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+    setTimeout(() => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(0.35, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.8);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 1.8);
+    }, i * 280);
   });
 }
 
@@ -235,6 +259,7 @@ function sw(m_){
 }
 
 function toggle(){
+  unlockAudio();
   if(going){
     clearInterval(iv);going=false;
     document.getElementById('gbtn').textContent='▶ Resume';
@@ -247,7 +272,6 @@ function toggle(){
       rem--;render();
       if(rem<=0){
         clearInterval(iv);going=false;
-        playBell();
         if(mode==='work') done++;
         updateDots();
         const next=mode==='work'?(done%DOTS===0?'long':'short'):'work';
